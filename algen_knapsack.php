@@ -7,7 +7,10 @@ class Parameters
     const FILE_NAME = 'products.txt';
     const COLUMNS = ['item', 'price'];
     const population_size = 10;
-    const BUDGET = 250000;
+    // const BUDGET = 250000;
+    // const STOPPING_VALUE = 10000;
+    const BUDGET = 130;
+    const STOPPING_VALUE = 10;
 }
 
 class Catalogue
@@ -95,11 +98,59 @@ class Fitness
     function countSelectedItem($individu){
         return count($this->selectionItem($individu));
     }
+    
+    //untuk menenemukan berapa jumlah individu yang terbaik
+    function searchBestIndividu($fits, $maxItem,  $numberOfIndividuHasMaxItem){
+        if($numberOfIndividuHasMaxItem === 1){
+            $index = array_search($maxItem, array_column($fits, 'numberOfSelectedItem'));
+            return $fits[$index];
+        } else {
+            foreach($fits as $key => $val){
+                if($val['numberOfSelectedItem'] === $maxItem){
+                    echo $key. ' '.$val['fitnessValue'].'<br>';
+                    $ret[] = [
+                        'individuKey' => $key,
+                        'fitnessValue' => $val['fitnessValue']
+                    ];
+                }
+            }
+            if (count(array_unique(array_column($ret, 'fitnessValue'))) === 1){
+                $index = rand(0, count($ret) - 1);
+            } else {
+                $max = max(array_column($ret, 'fitnessValue'));
+                $index = array_search($max, array_column($ret, 'fitnessValue'));
+            }
+            echo 'Hasil';
+            return $ret[$index];
+        }
+    }
 
     //menemukan solusi yang terbaik dari individu yang FIT
     function isFound($fits){
         //menghitung item Max
-        print_r(array_count_values(array_column($fits, 'numberOfSelectedItem')));
+        $countedMaxItems = array_count_values(array_column($fits, 'numberOfSelectedItem'));
+        print_r($countedMaxItems);
+        echo '<br>';
+        $maxItem = max(array_keys($countedMaxItems));
+        echo $maxItem;
+        echo '<br>';
+        echo $countedMaxItems[$maxItem];
+        $numberOfIndividuHasMaxItem = $countedMaxItems[$maxItem];
+
+        $bestFitnessValue = $this->searchBestIndividu($fits, $maxItem, $numberOfIndividuHasMaxItem)['fitnessValue'];
+        echo '<br>';
+        //menampilkan hasil individu terbaik dengan harga yang paling mendekati budget
+        echo '<br>Best fitness value: '.$bestFitnessValue; 
+        echo '<br>';
+
+        //menghitung selisih harga dengan budget
+        $residual = Parameters::BUDGET - $bestFitnessValue;
+        echo 'Residual : '.$residual;
+        echo '<br>';
+
+        if($residual <= Parameters::BUDGET && $residual > 0){
+            return TRUE;
+        }
     }
 
     //mengecek apakah Fit atau tidak dari fitnes value
@@ -137,7 +188,11 @@ class Fitness
             }
             echo '<p>';
         }
-        $this->isFound($fits);
+        if($this->isFound($fits)){
+            echo 'Found';
+        } else {
+            echo '>> Next Generation';
+        }
     }
 }
 
