@@ -11,6 +11,7 @@ class Parameters
     // const STOPPING_VALUE = 10000;
     const BUDGET = 130;
     const STOPPING_VALUE = 10;
+    const CROSSOVER_RATE = 0.8;
 }
 
 class Catalogue
@@ -193,6 +194,102 @@ class Fitness
         } else {
             echo '>> Next Generation';
         }
+        echo '<br>';
+    }
+}
+
+//Pertemuan 3 Crossover
+class Crossover{
+    public $population;
+
+    function __construct($population)
+    {
+        $this->population = $population;
+    }
+
+    //membangkitkan nilai acak
+    function randomZeroToOne(){
+        return (float) rand() / (float) getrandmax();
+    }
+    function generateCrossover(){
+        for ($i = 0; $i <= Parameters::population_size-1; $i++){
+            $randomZeroToOne = $this->randomZeroToOne();
+            if($randomZeroToOne < Parameters::CROSSOVER_RATE){
+                $parents[$i] = $randomZeroToOne;
+            }
+        }
+
+        //membuat kombinasi dari individu-individu yang terpilih
+        foreach(array_keys($parents) as $key){
+            foreach(array_keys($parents) as $subkey){
+                if ($key !== $subkey){
+                    $ret[] = [$key, $subkey];
+                }
+            }
+            array_shift($parents);
+        }
+        return $ret;
+    }
+
+    //tetapkan parent
+    function offspring($parent1, $parent2, $cutPointIndex, $offspring){
+        $lengthOfGen = new Individu;
+        if($offspring === 1){
+            for($i = 0; $i <= $lengthOfGen->CountNumberOfGen() - 1; $i++){
+                if($i <= $cutPointIndex){
+                    $ret[] = $parent1[$i]; //jika dia membaca setiap gen sepanjang kromosom, maka jika kurang dari cutPointIndex akan disimpan kedalam return
+                }
+                if($i > $cutPointIndex){
+                    $ret[] = $parent2[$i];
+                }
+            }
+        }
+        if($offspring === 2){
+            for($i = 0; $i <= $lengthOfGen->CountNumberOfGen() - 1; $i++){
+                if($i <= $cutPointIndex){
+                    $ret[] = $parent2[$i]; //jika dia membaca setiap gen sepanjang kromosom, maka jika kurang dari cutPointIndex akan disimpan kedalam return
+                }
+                if($i > $cutPointIndex){
+                    $ret[] = $parent1[$i];
+                }
+            }
+        }
+        return $ret;
+    }
+    
+    function cutPointRandom(){
+        $lengthOfGen = new Individu;
+        return rand(0, $lengthOfGen->CountNumberOfGen() - 1);
+    }
+
+    function crossover(){
+        $cutPointIndex = $this->cutPointRandom();
+        echo 'cutPoint di Index Ke : '. $cutPointIndex;
+        //potong berdasarkan crossover
+        echo '<br>';
+        foreach($this->generateCrossover() as $listOfCrossover){
+            $parent1 = $this->population[$listOfCrossover[0]];
+            $parent2 = $this->population[$listOfCrossover[1]];
+            echo '<br><br>Parent :<br>';
+            foreach($parent1 as $gen){
+                echo $gen;
+            }
+            echo ' >< ';
+            foreach($parent2 as $gen){
+                echo $gen;
+            }
+            //echo '<br';
+            echo '<br>Offspring<br>';
+            $offspring1 = $this->offspring($parent1, $parent2, $cutPointIndex, 1);
+            $offspring2 = $this->offspring($parent1, $parent2, $cutPointIndex, 2);
+            foreach($offspring1 as $gen){
+                echo $gen;
+            }
+            echo ' >< ';
+            foreach($offspring2 as $gen){
+                echo $gen;
+            }
+        }
     }
 }
 
@@ -211,6 +308,8 @@ $population = $initalPopulation->createRandomPupulation();
 $fitness = new Fitness;
 $fitness->fitnessEvaluation($population);
 
+$crossover = new Crossover($population);
+$crossover->crossover();
 
 // $individu = new Individu;
 // print_r($individu->createRandomIndividu());
