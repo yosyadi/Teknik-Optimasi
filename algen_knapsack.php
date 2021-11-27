@@ -1,6 +1,7 @@
 <?php
 
 use Catalogue as GlobalCatalogue;
+use Selection as GlobalSelection;
 
 class Parameters
 {
@@ -9,8 +10,8 @@ class Parameters
     const population_size = 10;
     // const BUDGET = 250000;
     // const STOPPING_VALUE = 10000;
-    const BUDGET = 130;
-    const STOPPING_VALUE = 10;
+    const BUDGET = 250000;
+    const STOPPING_VALUE = 10000;
     const CROSSOVER_RATE = 0.8;
 }
 
@@ -130,12 +131,12 @@ class Fitness
     function isFound($fits){
         //menghitung item Max
         $countedMaxItems = array_count_values(array_column($fits, 'numberOfSelectedItem'));
-        print_r($countedMaxItems);
-        echo '<br>';
+        //print_r($countedMaxItems);
+        //echo '<br>';
         $maxItem = max(array_keys($countedMaxItems));
-        echo $maxItem;
-        echo '<br>';
-        echo $countedMaxItems[$maxItem];
+        //echo $maxItem;
+        //echo '<br>';
+        //echo $countedMaxItems[$maxItem];
         $numberOfIndividuHasMaxItem = $countedMaxItems[$maxItem];
 
         $bestFitnessValue = $this->searchBestIndividu($fits, $maxItem, $numberOfIndividuHasMaxItem)['fitnessValue'];
@@ -167,9 +168,9 @@ class Fitness
         foreach ($population as $listOfIndividuKey => $listOfIndividu){
            echo 'Individu'. $listOfIndividuKey.'<br>';
             foreach ($listOfIndividu as $individuKey => $binaryGen){
-                echo $binaryGen.'&nbsp;&nbsp;';
-                print_r($catalogue->product()[$individuKey]);
-                echo '<br>';
+                //echo $binaryGen.'&nbsp;&nbsp;';
+                //print_r($catalogue->product()[$individuKey]);
+                //echo '<br>';
             }
             $fitnessValue = $this->calculateFitnessValue($listOfIndividu);
             $numberOfSelectedItem = $this->countSelectedItem($listOfIndividu);
@@ -183,7 +184,7 @@ class Fitness
                     'numberOfSelectedItem' => $numberOfSelectedItem,
                     'fitnessValue' => $fitnessValue
                 ];
-                print_r($fits);
+                //print_r($fits);
             } else {
                 echo ' (Not Fit)';
             }
@@ -305,7 +306,10 @@ class Crossover{
 // $katalog = new Catalogue;
 // $katalog->product($parameters);
 
+
+
 //Pertemuan 4 Mutasi
+
 //Individu secara acak
 class Randomizer
 {
@@ -355,48 +359,100 @@ class Mutation
                 $indexOfGen = Randomizer::getRandomIndexOfGen();
                 $selectedIndividu = $this->population[$indexOfIndividu];
 
-                echo '<br>Before mutation: ';
-                print_r($selectedIndividu);
-                echo '<br>';
+                //echo '<br>Before mutation: ';
+                //print_r($selectedIndividu);
+                //echo '<br>';
 
                 $valueOfGen = $selectedIndividu[$indexOfGen];
                 $mutatedGen = $this->generateMutastion($valueOfGen);
                 $selectedIndividu[$indexOfGen] = $mutatedGen;
                 
-                echo 'After Mutation: ';
-                print_r($selectedIndividu);
+                // echo 'After Mutation: ';
+                // print_r($selectedIndividu);
 
                 $ret[] = $selectedIndividu;
             }
-            return $ret;
+            return $ret; //masalahnya disini
         }   
+    }
+}
+
+//Video 5 Selection
+class Selection
+{
+    function __construct($population, $combinedOffsprings)
+    {
+        $this->population = $population;
+        $this->combinedOffsprings = $combinedOffsprings;
+    }
+
+    function createTemporaryPopulation(){
+        foreach($this->combinedOffsprings as $offspring){
+            $this->population[] = $offspring;
+        }
+        return $this->population;
+    }
+
+    function getVariableValue($basePopulation, $fitTemporaryPopulation)
+    {
+        foreach ($fitTemporaryPopulation as $val){
+            $ret[] = $basePopulation[$val[1]];
+        }
+        return $ret;
+    }
+
+    function sortFitTemporaryPopulation()
+    {
+        $tempPopulation = $this->createTemporaryPopulation();
+        $fitness = new Fitness;
+        foreach($tempPopulation as $key => $indvidu){
+            $fitnessValue = $fitness->calculateFitnessValue($indvidu);
+            if($fitness->isFit($fitnessValue)){
+                echo $fitnessValue.' '.$key.'<br>';
+                $fitTemporaryPopulation[] = [
+                    $fitnessValue,
+                    $key
+                ];
+            }
+        }
+        rsort($fitTemporaryPopulation);
+        $fitTemporaryPopulation = array_slice($fitTemporaryPopulation, 0, Parameters::population_size);
+        return $this->getVariableValue($tempPopulation, $fitTemporaryPopulation);
+    }
+
+    function selectingIndividus(){
+        $selected = $this->sortFitTemporaryPopulation();
+        print_r($selected);
     }
 }
 
 $initalPopulation = new Population;
 $population = $initalPopulation->createRandomPupulation();
 
-// $fitness = new Fitness;
-// $fitness->fitnessEvaluation($population);
+$fitness = new Fitness;
+$fitness->fitnessEvaluation($population);
 
 $crossover = new Crossover($population);
 $crossoverOffsprings = $crossover->crossover();
 
-echo 'Crossover offsprings: <br>';
-print_r($crossoverOffsprings);
+//echo 'Crossover offsprings: <br>';
+//print_r($crossoverOffsprings);
 
 $mutation = new Mutation($population);
 if($mutation->mutation()){
     $mutationOffsprings = $mutation->mutation();
-    echo 'Mutation offspring <br>';
-    print_r($mutationOffsprings);
-    echo '<p></p>';
+    //echo 'Mutation offspring <br>';
+    //print_r($mutationOffsprings);
+    //echo '<p></p>';
     foreach($mutationOffsprings as $mutationOffsprings){
         $crossoverOffsprings[] = $mutationOffsprings;
     }
 }
-echo 'Mutation offsprings <br>';
-print_r($crossoverOffsprings);
+//echo 'Mutation offsprings <br>';
+//print_r($crossoverOffsprings);
+
+$selection = new Selection($population, $crossoverOffsprings);
+$selection->selectingIndividus();
 
 // $individu = new Individu;
 // print_r($individu->createRandomIndividu());
